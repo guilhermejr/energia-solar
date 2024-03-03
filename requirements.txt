@@ -1,0 +1,5 @@
+growattServer==1.5.0
+psycopg==3.1.18
+python-dotenv==1.0.1
+python_dateutil==2.8.2
+vault_cli==3.1.0
