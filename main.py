@@ -25,13 +25,6 @@ load_dotenv()
 log = Log()
 utils = Utils()
 
-# --- Data do último processamento ---
-with open('data_ultimo_processamento.txt', 'r') as arquivo:
-    ultimo_processamento = arquivo.read()
-
-# --- Primeiro dia do mês da data do último processamento ---
-ultimo_processamento = datetime.datetime.strptime(ultimo_processamento, '%d/%m/%Y').date().replace(day=1)
-
 # --- Conecta ao Vault e recupera os dados necessários para o processamento ---
 try:
     vault = vault_cli.get_client(url=os.environ.get('VAULT_URL'), token=os.environ.get('VAULT_TOKEN'))
@@ -54,6 +47,13 @@ try:
 except Exception as e:
     mensagem = 'Erro ao usar PostgreSQL'
     mensagem_error(mensagem, e)
+
+# --- Data do último processamento ---
+cur.execute("SELECT data FROM processamentos WHERE id = 1")
+retorno = cur.fetchone()
+
+# --- Primeiro dia do mês da data do último processamento ---
+ultimo_processamento = datetime.datetime.strptime(str(retorno[0]), '%Y-%m-%d').date().replace(day=1)
 
 # --- Conecta a API da Growatt com retry ---
 i = 0
@@ -103,5 +103,5 @@ while i <= utils.diferenca_meses(ultimo_processamento):
     i += 1
 
 # --- Atualiza data do último processamento ---
-with open('data_ultimo_processamento.txt', 'w') as arquivo:
-    arquivo.write(datetime.date.today().strftime('%d/%m/%Y'))
+cur.execute("UPDATE processamentos SET data = '%s', atualizado = CURRENT_TIMESTAMP WHERE id = 1" % (str(datetime.date.today().strftime('%Y-%m-%d'))))
+conn.commit()
